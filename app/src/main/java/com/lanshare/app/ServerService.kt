@@ -5,7 +5,9 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.content.Context
 import android.content.Intent
+import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.IBinder
 import kotlinx.coroutines.CoroutineScope
@@ -19,6 +21,7 @@ import kotlinx.coroutines.launch
 import java.net.Inet4Address
 import java.net.NetworkInterface
 import java.util.Collections
+import java.util.Locale
 
 data class ServerUiState(
     val running: Boolean = false,
@@ -87,7 +90,7 @@ class ServerService : Service() {
             server = HttpServer(storage, pm, port)
             runCatching { server?.start() }
                 .onSuccess {
-                    val ip = localIpAddress() ?: "127.0.0.1"
+                    val ip = resolveBestIpAddress() ?: "127.0.0.1"
                     val url = "http://$ip:$port"
                     _state.value = ServerUiState(
                         running = true,
@@ -149,6 +152,28 @@ class ServerService : Service() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val channel = NotificationChannel("lan_share_channel", "LAN Share", NotificationManager.IMPORTANCE_LOW)
         getSystemService(NotificationManager::class.java)?.createNotificationChannel(channel)
+    }
+
+    private fun resolveBestIpAddress(): String? {
+        val wifi = wifiIpAddress()
+        if (!wifi.isNullOrBlank()) return wifi
+        return localIpAddress()
+    }
+
+    private fun wifiIpAddress(): String? {
+        return runCatching {
+            val wm = applicationContext.getSystemService(Context.WIFI_SERVICE) as? WifiManager
+            val ip = wm?.connectionInfo?.ipAddress ?: 0
+            if (ip == 0) return@runCatching null
+            String.format(
+                Locale.US,
+                "%d.%d.%d.%d",
+                ip and 0xff,
+                ip shr 8 and 0xff,
+                ip shr 16 and 0xff,
+                ip shr 24 and 0xff
+            )
+        }.getOrNull()
     }
 
     private fun localIpAddress(): String? {

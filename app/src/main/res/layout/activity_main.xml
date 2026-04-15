@@ -9,96 +9,157 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="20dp">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="LAN Share"
-            android:textSize="24sp"
-            android:textStyle="bold"
-            android:textColor="@color/text_primary" />
-
-        <TextView
-            android:id="@+id/tvUrl"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="http://0.0.0.0:1390"
-            android:textStyle="bold"
-            android:textSize="26sp"
-            android:textColor="@color/text_primary" />
-
-        <TextView
-            android:id="@+id/tvSubtitle"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:textSize="14sp"
-            android:textColor="@color/text_muted" />
-
-        <ImageView
-            android:id="@+id/ivQr"
-            android:layout_width="200dp"
-            android:layout_height="200dp"
-            android:layout_marginTop="16dp"
-            android:background="@android:color/white"
-            android:contentDescription="QR code" />
-
-        <TextView
-            android:id="@+id/tvStatus"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
-            android:text="Status: stopped"
-            android:textStyle="bold"
-            android:textColor="@color/status_stopped" />
+        android:padding="16dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
-            android:orientation="horizontal">
+            android:orientation="vertical"
+            android:background="@drawable/bg_card"
+            android:padding="16dp">
 
-            <EditText
-                android:id="@+id/etPort"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:hint="Port"
-                android:inputType="number"
-                android:maxLines="1"
-                android:text="1390" />
-
-            <Button
-                android:id="@+id/btnApplyPort"
+            <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:text="Restart Server" />
+                android:text="Swap"
+                android:textColor="@color/text_primary"
+                android:textSize="24sp"
+                android:fontFamily="@font/jetbrains_mono_bold" />
+
+            <TextView
+                android:id="@+id/tvUrl"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="http://0.0.0.0:1390"
+                android:textColor="@color/text_primary"
+                android:textSize="24sp"
+                android:fontFamily="@font/jetbrains_mono_bold" />
+
+            <TextView
+                android:id="@+id/tvSubtitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="@string/subtitle"
+                android:textColor="@color/text_muted"
+                android:textSize="13sp"
+                android:fontFamily="@font/jetbrains_mono_regular" />
+
+            <ImageView
+                android:id="@+id/ivQr"
+                android:layout_width="200dp"
+                android:layout_height="200dp"
+                android:layout_marginTop="16dp"
+                android:layout_gravity="center_horizontal"
+                android:background="@color/white"
+                android:contentDescription="QR code" />
+
+            <TextView
+                android:id="@+id/tvStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:text="Status: stopped"
+                android:textColor="@color/status_stopped"
+                android:textSize="14sp"
+                android:fontFamily="@font/jetbrains_mono_bold" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:orientation="horizontal">
+
+                <EditText
+                    android:id="@+id/etPort"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_edittext"
+                    android:fontFamily="@font/jetbrains_mono_regular"
+                    android:hint="Port"
+                    android:inputType="number"
+                    android:maxLines="1"
+                    android:text="1390"
+                    android:textColor="@color/text_primary"
+                    android:textColorHint="@color/text_muted" />
+
+                <Button
+                    android:id="@+id/btnApplyPort"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:background="@drawable/bg_secondary_button"
+                    android:fontFamily="@font/jetbrains_mono_bold"
+                    android:paddingLeft="14dp"
+                    android:paddingRight="14dp"
+                    android:text="Restart"
+                    android:textAllCaps="false"
+                    android:textColor="@color/text_primary" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/btnStartServer"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_primary_button"
+                    android:fontFamily="@font/jetbrains_mono_bold"
+                    android:text="Start Server"
+                    android:textAllCaps="false"
+                    android:textColor="@color/white" />
+
+                <Button
+                    android:id="@+id/btnStopServer"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:background="@drawable/bg_secondary_button"
+                    android:fontFamily="@font/jetbrains_mono_bold"
+                    android:text="Stop"
+                    android:textAllCaps="false"
+                    android:textColor="@color/text_primary" />
+            </LinearLayout>
+
+            <Button
+                android:id="@+id/btnOpenBrowser"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_primary_button"
+                android:fontFamily="@font/jetbrains_mono_bold"
+                android:text="Open in Browser"
+                android:textAllCaps="false"
+                android:textColor="@color/white" />
+
+            <Button
+                android:id="@+id/btnChangeFolder"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_secondary_button"
+                android:fontFamily="@font/jetbrains_mono_bold"
+                android:text="📁 Change folder"
+                android:textAllCaps="false"
+                android:textColor="@color/text_primary" />
+
+            <TextView
+                android:id="@+id/tvFolder"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:textColor="@color/text_muted"
+                android:textSize="12sp"
+                android:fontFamily="@font/jetbrains_mono_regular" />
         </LinearLayout>
-
-        <Button
-            android:id="@+id/btnOpenBrowser"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="Open in Browser" />
-
-        <Button
-            android:id="@+id/btnChangeFolder"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="📁 Change folder" />
-
-        <TextView
-            android:id="@+id/tvFolder"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:textSize="12sp"
-            android:textColor="@color/text_muted" />
 
     </LinearLayout>
 </ScrollView>

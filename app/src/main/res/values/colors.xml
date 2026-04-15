@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="bg_main">#F7F6F3</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="border">#E4E2DC</color>
     <color name="text_primary">#1A1A18</color>
     <color name="text_muted">#888680</color>
+    <color name="accent">#2A6EF5</color>
+    <color name="accent_light">#EEF2FF</color>
     <color name="status_running">#16A34A</color>
     <color name="status_stopped">#E53E3E</color>
+    <color name="white">#FFFFFF</color>
 </resources>

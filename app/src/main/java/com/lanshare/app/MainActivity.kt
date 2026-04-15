@@ -36,6 +36,7 @@ class MainActivity : Activity() {
 
     private var currentUrl = ""
     private var currentTreeUri: String? = null
+    private var askedManageAllFilesOnce = false
     private val uiScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var collectJob: Job? = null
 
@@ -56,10 +57,12 @@ class MainActivity : Activity() {
         val btnOpenBrowser: Button = findViewById(R.id.btnOpenBrowser)
         val btnApplyPort: Button = findViewById(R.id.btnApplyPort)
         val btnChangeFolder: Button = findViewById(R.id.btnChangeFolder)
+        val btnStartServer: Button = findViewById(R.id.btnStartServer)
+        val btnStopServer: Button = findViewById(R.id.btnStopServer)
 
         val port = prefs.getInt(KEY_PORT, 1390)
         etPort.setText(port.toString())
-        tvSubtitle.text = "Open this address in any browser on the same Wi-Fi"
+        tvSubtitle.text = getString(R.string.subtitle)
 
         val storage = StorageAccess(this, currentTreeUri)
         storage.ensureRootExists()
@@ -85,6 +88,32 @@ class MainActivity : Activity() {
             startOrRestartService(p)
         }
 
+        btnStartServer.setOnClickListener {
+            val p = etPort.text.toString().trim().toIntOrNull()
+            if (p == null || p !in 1024..65535) {
+                etPort.error = "Port must be 1024-65535"
+                return@setOnClickListener
+            }
+            prefs.edit().putInt(KEY_PORT, p).apply()
+            if (hasRequiredStoragePermission()) {
+                startOrRestartService(p)
+            } else {
+                ensurePermissionAndStart()
+            }
+        }
+
+        btnStopServer.setOnClickListener {
+            val stopIntent = Intent(this, ServerService::class.java).apply {
+                action = ServerService.ACTION_STOP
+            }
+            runCatching { startService(stopIntent) }
+            currentUrl = ""
+            tvUrl.text = getString(R.string.server_not_running)
+            tvStatus.text = "Status: stopped"
+            tvStatus.setTextColor(resources.getColor(R.color.status_stopped, theme))
+            renderQr("")
+        }
+
         btnChangeFolder.setOnClickListener {
             val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
@@ -99,7 +128,9 @@ class MainActivity : Activity() {
     override fun onResume() {
         super.onResume()
         observeServerState()
-        ensurePermissionAndStart()
+        if (!hasRequiredStoragePermission()) {
+            ensurePermissionAndStart()
+        }
     }
 
     override fun onPause() {
@@ -125,8 +156,9 @@ class MainActivity : Activity() {
             return
         }
         if (requestCode == REQ_MANAGE_ALL_FILES) {
+            askedManageAllFilesOnce = false
             if (hasRequiredStoragePermission()) {
-                startOrRestartService()
+                toast("Permission granted. Tap Start Server.")
             } else {
                 toast("All files access is required on Android 11+")
             }
@@ -141,7 +173,7 @@ class MainActivity : Activity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == REQ_STORAGE_PERMS) {
             if (hasRequiredStoragePermission()) {
-                startOrRestartService()
+                toast("Permission granted. Tap Start Server.")
             } else {
                 toast("Storage permission is required")
             }
@@ -155,7 +187,7 @@ class MainActivity : Activity() {
                 tvStatus.text = if (state.running) "Status: running" else "Status: stopped"
                 tvStatus.setTextColor(resources.getColor(if (state.running) R.color.status_running else R.color.status_stopped, theme))
                 currentUrl = state.url
-                tvUrl.text = if (state.url.isBlank()) "http://0.0.0.0:${etPort.text}" else state.url
+                tvUrl.text = if (state.url.isBlank()) getString(R.string.server_not_running) else state.url
                 if (state.folderDisplay.isNotBlank()) tvFolder.text = state.folderDisplay
                 renderQr(tvUrl.text.toString())
             }
@@ -164,11 +196,12 @@ class MainActivity : Activity() {
 
     private fun ensurePermissionAndStart() {
         if (hasRequiredStoragePermission()) {
-            startOrRestartService()
             return
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (askedManageAllFilesOnce) return
+            askedManageAllFilesOnce = true
             val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
                 data = Uri.parse("package:$packageName")
             }
@@ -208,6 +241,10 @@ class MainActivity : Activity() {
     }
 
     private fun renderQr(content: String) {
+        if (content.isBlank() || !content.startsWith("http://")) {
+            qrImage.setImageBitmap(null)
+            return
+        }
         val px = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 200f, resources.displayMetrics).toInt()
         runCatching { QrCodeGenerator.render(content, px) }
             .onSuccess { qrImage.setImageBitmap(it) }

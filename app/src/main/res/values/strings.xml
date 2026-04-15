@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">LAN Share</string>
+    <string name="app_name">Swap</string>
+    <string name="subtitle">Open this address in any browser on the same Wi-Fi</string>
+    <string name="server_not_running">Server not running</string>
 </resources>
