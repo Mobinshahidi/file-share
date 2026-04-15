@@ -92,7 +92,6 @@ class ServerService : Service() {
                 .onSuccess {
                     val ip = resolveBestIpAddress() ?: "127.0.0.1"
                     val url = "http://$ip:$port"
-                    HtmlRenderer.setServerContext(deviceName(), url)
                     _state.value = ServerUiState(
                         running = true,
                         status = "running",
@@ -186,11 +185,5 @@ class ServerService : Service() {
             }
         }
         return null
-    }
-
-    private fun deviceName(): String {
-        val manufacturer = android.os.Build.MANUFACTURER ?: "Android"
-        val model = android.os.Build.MODEL ?: "Phone"
-        return "$manufacturer $model"
     }
 }

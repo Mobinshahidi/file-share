@@ -36,7 +36,8 @@ data class FileEntry(
     val name: String,
     val isDirectory: Boolean,
     val size: Long,
-    val relativePath: String
+    val relativePath: String,
+    val modifiedAt: Long
 )
 
 data class ZipSource(
@@ -186,7 +187,8 @@ class StorageAccess(private val context: Context, private val treeUri: String?) 
                     name = it.name,
                     isDirectory = it.isDirectory,
                     size = if (it.isDirectory) 0L else it.length(),
-                    relativePath = joinPath(clean, it.name)
+                    relativePath = joinPath(clean, it.name),
+                    modifiedAt = it.lastModified()
                 )
             } ?: emptyList()
     }
@@ -204,7 +206,8 @@ class StorageAccess(private val context: Context, private val treeUri: String?) 
                     name = name,
                     isDirectory = isDocumentTreeDir(uri),
                     size = if (isDocumentTreeDir(uri)) 0L else fileSize(joinPath(clean, name)),
-                    relativePath = joinPath(clean, name)
+                    relativePath = joinPath(clean, name),
+                    modifiedAt = lastModifiedOf(uri)
                 )
             }
     }
@@ -373,6 +376,20 @@ class StorageAccess(private val context: Context, private val treeUri: String?) 
             if (it.moveToFirst()) return it.getString(0)
         }
         return null
+    }
+
+    private fun lastModifiedOf(uri: Uri): Long {
+        val cursor = context.contentResolver.query(
+            uri,
+            arrayOf(DocumentsContract.Document.COLUMN_LAST_MODIFIED),
+            null,
+            null,
+            null
+        ) ?: return 0L
+        cursor.use {
+            if (it.moveToFirst()) return it.getLong(0)
+        }
+        return 0L
     }
 
     private fun isDocumentTreeDir(uri: Uri): Boolean {

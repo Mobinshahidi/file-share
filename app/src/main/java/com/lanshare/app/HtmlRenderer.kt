@@ -5,13 +5,6 @@ import java.net.URLEncoder
 import java.util.Locale
 
 object HtmlRenderer {
-    @Volatile private var serverDeviceName: String = "Android Phone"
-    @Volatile private var serverUrl: String = ""
-
-    fun setServerContext(deviceName: String, url: String) {
-        serverDeviceName = if (deviceName.isBlank()) "Android Phone" else deviceName
-        serverUrl = url
-    }
 
     private val css = """
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -26,10 +19,7 @@ object HtmlRenderer {
 body { background: var(--bg); color: var(--text); font-family: var(--sans);
        font-weight: 300; min-height: 100vh; padding: 2rem 1rem; }
 .container { max-width: 680px; margin: 0 auto; }
-.device-banner { margin-bottom: 1rem; border: 1px solid var(--border); background: var(--surface); border-radius: var(--radius); padding: 0.8rem 1rem; }
-.device-title { font-family: var(--mono); font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.35rem; }
-.device-value { font-family: var(--mono); font-size: 0.9rem; color: var(--text); }
-.top-tools { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+.top-tools { display: flex; gap: 0.5rem; margin-top: 0.85rem; flex-wrap: wrap; }
 .tool-input { flex: 1; min-width: 170px; border: 1px solid var(--border); border-radius: 8px; padding: 0.55rem 0.75rem; font-family: var(--mono); font-size: 0.82rem; background: var(--surface); color: var(--text); outline: none; }
 .tool-select { border: 1px solid var(--border); border-radius: 8px; padding: 0.55rem 0.65rem; font-family: var(--mono); font-size: 0.82rem; background: var(--surface); color: var(--text); }
 header { margin-bottom: 2rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--border); }
@@ -185,6 +175,8 @@ function rebuildRows() {
     if (sort === 'name_desc') return b.name.localeCompare(a.name, undefined, { sensitivity: 'base' });
     if (sort === 'size_asc') return a.size - b.size;
     if (sort === 'size_desc') return b.size - a.size;
+    if (sort === 'date_desc') return b.modified - a.modified;
+    if (sort === 'date_asc') return a.modified - b.modified;
     return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
   });
 
@@ -465,7 +457,8 @@ document.addEventListener('DOMContentLoaded', () => {
   fileRows = [...document.querySelectorAll('#files-tbody tr[data-name]')].map(row => ({
     row,
     name: row.dataset.name || '',
-    size: Number(row.dataset.size || '0')
+    size: Number(row.dataset.size || '0'),
+    modified: Number(row.dataset.modified || '0')
   }));
   rebuildRows();
 });
@@ -507,21 +500,6 @@ document.addEventListener('DOMContentLoaded', () => {
 </head>
 <body>
 <div class="container">
-  <div class="device-banner">
-    <div class="device-title">Device</div>
-    <div class="device-value">${escapeHtml(serverDeviceName)}</div>
-    <div class="device-title" style="margin-top:0.5rem;">Address</div>
-    <div class="device-value">${escapeHtml(serverUrl)}</div>
-  </div>
-  <div class="top-tools">
-    <input class="tool-input" id="search-input" placeholder="Search files and folders" />
-    <select class="tool-select" id="sort-select">
-      <option value="name_asc">Sort: Name A-Z</option>
-      <option value="name_desc">Sort: Name Z-A</option>
-      <option value="size_asc">Sort: Size small-large</option>
-      <option value="size_desc">Sort: Size large-small</option>
-    </select>
-  </div>
   <header>
     <div class="breadcrumb">$breadcrumb</div>
     <div class="header-row">
@@ -549,6 +527,17 @@ document.addEventListener('DOMContentLoaded', () => {
         <input type="text"     id="paste-name"     placeholder="filename (optional)">
         <input type="password" id="paste-password" placeholder="password (optional)">
         <button class="btn" id="save-text-btn">Save</button>
+      </div>
+      <div class="top-tools">
+        <input class="tool-input" id="search-input" placeholder="Search files and folders" />
+        <select class="tool-select" id="sort-select">
+          <option value="name_asc">Sort: Name A-Z</option>
+          <option value="name_desc">Sort: Name Z-A</option>
+          <option value="size_asc">Sort: Size small-large</option>
+          <option value="size_desc">Sort: Size large-small</option>
+          <option value="date_desc">Sort: Date newest</option>
+          <option value="date_asc">Sort: Date oldest</option>
+        </select>
       </div>
       <p class="hint">Leave password blank to save without protection.</p>
     </div>
@@ -621,15 +610,16 @@ document.addEventListener('DOMContentLoaded', () => {
             val encodedPath = encodeSegments(entry.relativePath)
             val rowNameAttr = escapeHtml(entry.name)
             val rowSizeAttr = if (entry.isDirectory) "0" else entry.size.toString()
+            val rowModifiedAttr = entry.modifiedAt.toString()
             if (entry.isDirectory) {
                 val url = "/$encodedPath"
-                rows.append("<tr data-name=\"$rowNameAttr\" data-size=\"$rowSizeAttr\"><td class=\"check\"><input type=\"checkbox\" class=\"file-cb\" data-name=\"$nameHtml\" data-type=\"dir\"></td><td class=\"icon\">📁</td><td><a href=\"$url\">$nameHtml/</a></td><td class=\"size\">—</td></tr>")
+                rows.append("<tr data-name=\"$rowNameAttr\" data-size=\"$rowSizeAttr\" data-modified=\"$rowModifiedAttr\"><td class=\"check\"><input type=\"checkbox\" class=\"file-cb\" data-name=\"$nameHtml\" data-type=\"dir\"></td><td class=\"icon\">📁</td><td><a href=\"$url\">$nameHtml/</a></td><td class=\"size\">—</td></tr>")
             } else {
                 val url = "/$encodedPath"
                 if (entry.relativePath in protectedFiles) {
-                    rows.append("<tr data-name=\"$rowNameAttr\" data-size=\"$rowSizeAttr\"><td class=\"check\"></td><td class=\"icon\">🔒</td><td><span class=\"locked\" onclick=\"promptPassword('$url','$nameHtml')\">$nameHtml</span></td><td class=\"size\">${FileUtils.formatSize(entry.size)}</td></tr>")
+                    rows.append("<tr data-name=\"$rowNameAttr\" data-size=\"$rowSizeAttr\" data-modified=\"$rowModifiedAttr\"><td class=\"check\"></td><td class=\"icon\">🔒</td><td><span class=\"locked\" onclick=\"promptPassword('$url','$nameHtml')\">$nameHtml</span></td><td class=\"size\">${FileUtils.formatSize(entry.size)}</td></tr>")
                 } else {
-                    rows.append("<tr data-name=\"$rowNameAttr\" data-size=\"$rowSizeAttr\"><td class=\"check\"><input type=\"checkbox\" class=\"file-cb\" data-name=\"$nameHtml\"></td><td class=\"icon\">${FileUtils.iconFor(entry.name)}</td><td><a href=\"$url\" download=\"$nameHtml\">$nameHtml</a></td><td class=\"size\">${FileUtils.formatSize(entry.size)}</td></tr>")
+                    rows.append("<tr data-name=\"$rowNameAttr\" data-size=\"$rowSizeAttr\" data-modified=\"$rowModifiedAttr\"><td class=\"check\"><input type=\"checkbox\" class=\"file-cb\" data-name=\"$nameHtml\"></td><td class=\"icon\">${FileUtils.iconFor(entry.name)}</td><td><a href=\"$url\" download=\"$nameHtml\">$nameHtml</a></td><td class=\"size\">${FileUtils.formatSize(entry.size)}</td></tr>")
                 }
             }
         }

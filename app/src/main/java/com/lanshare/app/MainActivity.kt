@@ -15,6 +15,7 @@ import android.provider.Settings
 import android.util.TypedValue
 import android.util.Log
 import android.view.ViewGroup
+import android.net.wifi.WifiManager
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
@@ -75,9 +76,9 @@ class MainActivity : Activity() {
         val storage = StorageAccess(this, currentTreeUri)
         storage.ensureRootExists()
         tvFolder.text = storage.displayPath()
-        tvUrl.text = "http://0.0.0.0:$port"
+        tvUrl.text = getString(R.string.server_not_running)
         tvQrMode.text = getString(R.string.qr_mode_none)
-        renderQr(tvUrl.text.toString())
+        renderQr("")
         handleShareIntent(intent)
 
         btnOpenBrowser.setOnClickListener {
@@ -330,7 +331,7 @@ class MainActivity : Activity() {
     }
 
     private fun readHotspotCredentialsAuto(): Pair<String, String>? {
-        return runCatching {
+        val apConfigPair = runCatching {
             val wm = applicationContext.getSystemService(WIFI_SERVICE)
             val method = wm.javaClass.methods.firstOrNull { it.name == "getWifiApConfiguration" } ?: return@runCatching null
             val config = method.invoke(wm) ?: return@runCatching null
@@ -338,6 +339,16 @@ class MainActivity : Activity() {
             val key = runCatching { config.javaClass.getField("preSharedKey").get(config) as? String }.getOrNull() ?: ""
             if (ssid.isBlank()) null else ssid to key
         }.getOrNull()
+        if (apConfigPair != null) return apConfigPair
+
+        val wifiPair = runCatching {
+            val wm = applicationContext.getSystemService(WIFI_SERVICE) as? WifiManager ?: return@runCatching null
+            val ssidRaw = wm.connectionInfo?.ssid ?: return@runCatching null
+            val ssid = ssidRaw.trim().trim('"')
+            if (ssid.isBlank() || ssid.equals("<unknown ssid>", ignoreCase = true)) return@runCatching null
+            ssid to ""
+        }.getOrNull()
+        return wifiPair
     }
 
     private fun buildWifiQrPayload(ssid: String, password: String): String {
