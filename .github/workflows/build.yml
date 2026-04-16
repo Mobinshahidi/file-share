@@ -9,6 +9,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
       ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
       ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
@@ -56,7 +57,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: swap-release-apk
-          path: app/build/outputs/apk/release/swap-release.apk
+          path: app/build/outputs/apk/release/*.apk
           if-no-files-found: warn
 
       - name: Upload debug APK artifact
@@ -64,5 +65,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: swap-debug-apk
-          path: app/build/outputs/apk/debug/swap-debug.apk
+          path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: warn

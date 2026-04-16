@@ -71,7 +71,8 @@ android {
 androidComponents {
     onVariants(selector().all()) { variant ->
         variant.outputs.forEach { output ->
-            output.outputFileName.set("swap-${variant.name}.apk")
+            val apkOutput = output as? com.android.build.api.variant.ApkVariantOutput
+            apkOutput?.outputFileName?.set("swap-${variant.name}.apk")
         }
     }
 }

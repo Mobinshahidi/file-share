@@ -19,6 +19,7 @@ Thumbs.db
 # Keystore / signing
 *.jks
 *.keystore
+keystore.base64.txt
 
 # Android captures
 captures/
