@@ -19,7 +19,9 @@ object HtmlRenderer {
 body { background: var(--bg); color: var(--text); font-family: var(--sans);
        font-weight: 300; min-height: 100vh; padding: 2rem 1rem; }
 .container { max-width: 680px; margin: 0 auto; }
-.top-tools { display: flex; gap: 0.5rem; margin-top: 0.85rem; flex-wrap: wrap; }
+.tools-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 1rem; overflow: hidden; }
+.tools-body { padding: 0.9rem 1.25rem; }
+.top-tools { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 .tool-input { flex: 1; min-width: 170px; border: 1px solid var(--border); border-radius: 8px; padding: 0.55rem 0.75rem; font-family: var(--mono); font-size: 0.82rem; background: var(--surface); color: var(--text); outline: none; }
 .tool-select { border: 1px solid var(--border); border-radius: 8px; padding: 0.55rem 0.65rem; font-family: var(--mono); font-size: 0.82rem; background: var(--surface); color: var(--text); }
 header { margin-bottom: 2rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--border); }
@@ -528,6 +530,11 @@ document.addEventListener('DOMContentLoaded', () => {
         <input type="password" id="paste-password" placeholder="password (optional)">
         <button class="btn" id="save-text-btn">Save</button>
       </div>
+      <p class="hint">Leave password blank to save without protection.</p>
+    </div>
+  </div>
+  <div class="tools-card">
+    <div class="tools-body">
       <div class="top-tools">
         <input class="tool-input" id="search-input" placeholder="Search files and folders" />
         <select class="tool-select" id="sort-select">
@@ -539,7 +546,6 @@ document.addEventListener('DOMContentLoaded', () => {
           <option value="date_asc">Sort: Date oldest</option>
         </select>
       </div>
-      <p class="hint">Leave password blank to save without protection.</p>
     </div>
   </div>
   <div id="queue-panel">

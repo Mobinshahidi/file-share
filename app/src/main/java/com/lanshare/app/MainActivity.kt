@@ -2,7 +2,6 @@ package com.lanshare.app
 
 import android.Manifest
 import android.app.Activity
-import android.app.AlertDialog
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
@@ -14,12 +13,9 @@ import android.provider.OpenableColumns
 import android.provider.Settings
 import android.util.TypedValue
 import android.util.Log
-import android.view.ViewGroup
-import android.net.wifi.WifiManager
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
-import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import kotlinx.coroutines.CoroutineScope
@@ -43,7 +39,6 @@ class MainActivity : Activity() {
     private var currentUrl = ""
     private var currentTreeUri: String? = null
     private var askedManageAllFilesOnce = false
-    private var showHotspotQr = false
     private val uiScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var collectJob: Job? = null
 
@@ -67,7 +62,6 @@ class MainActivity : Activity() {
         val btnChangeFolder: Button = findViewById(R.id.btnChangeFolder)
         val btnStopServer: Button = findViewById(R.id.btnStopServer)
         val btnEnableHotspot: Button = findViewById(R.id.btnEnableHotspot)
-        val btnShowHotspotQr: Button = findViewById(R.id.btnShowHotspotQr)
 
         val port = prefs.getInt(KEY_PORT, 1390)
         etPort.setText(port.toString())
@@ -97,7 +91,6 @@ class MainActivity : Activity() {
             }
             prefs.edit().putInt(KEY_PORT, p).apply()
             if (hasRequiredStoragePermission()) {
-                showHotspotQr = false
                 tvQrMode.text = getString(R.string.qr_mode_server)
                 startOrRestartService(p)
             } else {
@@ -114,7 +107,6 @@ class MainActivity : Activity() {
             tvUrl.text = getString(R.string.server_not_running)
             tvStatus.text = "Status: stopped"
             tvStatus.setTextColor(resources.getColor(R.color.status_stopped, theme))
-            showHotspotQr = false
             tvQrMode.text = getString(R.string.qr_mode_none)
             renderQr("")
         }
@@ -125,19 +117,6 @@ class MainActivity : Activity() {
             runCatching { startActivity(tetherIntent) }
                 .onFailure { runCatching { startActivity(fallbackIntent) } }
             toast("Open hotspot settings and turn it on")
-        }
-
-        btnShowHotspotQr.setOnClickListener {
-            val auto = readHotspotCredentialsAuto()
-            if (auto != null) {
-                prefs.edit().putString(KEY_HOTSPOT_SSID, auto.first).putString(KEY_HOTSPOT_PASS, auto.second).apply()
-                showHotspotQr = true
-                tvQrMode.text = getString(R.string.qr_mode_hotspot)
-                renderQr(buildWifiQrPayload(auto.first, auto.second))
-                toast("Hotspot QR generated from device settings")
-            } else {
-                showHotspotQrDialog()
-            }
         }
 
         btnChangeFolder.setOnClickListener {
@@ -221,10 +200,8 @@ class MainActivity : Activity() {
                 currentUrl = state.url
                 tvUrl.text = if (state.url.isBlank()) getString(R.string.server_not_running) else state.url
                 if (state.folderDisplay.isNotBlank()) tvFolder.text = state.folderDisplay
-                if (!showHotspotQr) {
-                    tvQrMode.text = if (state.url.isBlank()) getString(R.string.qr_mode_none) else getString(R.string.qr_mode_server)
-                    renderQr(tvUrl.text.toString())
-                }
+                tvQrMode.text = if (state.url.isBlank()) getString(R.string.qr_mode_none) else getString(R.string.qr_mode_server)
+                renderQr(if (state.url.isBlank()) "" else state.url)
             }
         }
     }
@@ -290,94 +267,6 @@ class MainActivity : Activity() {
         Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
     }
 
-    private fun showHotspotQrDialog() {
-        val container = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dp(16), dp(8), dp(16), dp(0))
-        }
-
-        val ssidInput = EditText(this).apply {
-            hint = "Hotspot name (SSID)"
-            setText(prefs.getString(KEY_HOTSPOT_SSID, ""))
-        }
-        val passInput = EditText(this).apply {
-            hint = "Hotspot password"
-            setText(prefs.getString(KEY_HOTSPOT_PASS, ""))
-        }
-
-        container.addView(ssidInput, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
-        container.addView(passInput, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
-
-        AlertDialog.Builder(this)
-            .setTitle("Hotspot QR")
-            .setMessage("Enter your hotspot details")
-            .setView(container)
-            .setNegativeButton("Cancel", null)
-            .setPositiveButton("Show QR") { _, _ ->
-                val ssid = ssidInput.text.toString().trim()
-                val pass = passInput.text.toString()
-                if (ssid.isBlank()) {
-                    toast("SSID is required")
-                    return@setPositiveButton
-                }
-                prefs.edit().putString(KEY_HOTSPOT_SSID, ssid).putString(KEY_HOTSPOT_PASS, pass).apply()
-                val payload = buildWifiQrPayload(ssid, pass)
-                showHotspotQr = true
-                tvQrMode.text = getString(R.string.qr_mode_hotspot)
-                renderQr(payload)
-                toast("Hotspot QR generated")
-            }
-            .show()
-    }
-
-    private fun readHotspotCredentialsAuto(): Pair<String, String>? {
-        val apConfigPair = runCatching {
-            val wm = applicationContext.getSystemService(WIFI_SERVICE)
-            val method = wm.javaClass.methods.firstOrNull { it.name == "getWifiApConfiguration" } ?: return@runCatching null
-            val config = method.invoke(wm) ?: return@runCatching null
-            val ssid = config.javaClass.getField("SSID").get(config) as? String ?: return@runCatching null
-            val key = runCatching { config.javaClass.getField("preSharedKey").get(config) as? String }.getOrNull() ?: ""
-            if (ssid.isBlank()) null else ssid to key
-        }.getOrNull()
-        if (apConfigPair != null) return apConfigPair
-
-        val wifiPair = runCatching {
-            val wm = applicationContext.getSystemService(WIFI_SERVICE) as? WifiManager ?: return@runCatching null
-            val ssidRaw = wm.connectionInfo?.ssid ?: return@runCatching null
-            val ssid = ssidRaw.trim().trim('"')
-            if (ssid.isBlank() || ssid.equals("<unknown ssid>", ignoreCase = true)) return@runCatching null
-            ssid to ""
-        }.getOrNull()
-        return wifiPair
-    }
-
-    private fun buildWifiQrPayload(ssid: String, password: String): String {
-        val escSsid = escapeWifiQrField(ssid)
-        val escPass = escapeWifiQrField(password)
-        return if (password.isBlank()) {
-            "WIFI:T:nopass;S:$escSsid;;"
-        } else {
-            "WIFI:T:WPA;S:$escSsid;P:$escPass;;"
-        }
-    }
-
-    private fun escapeWifiQrField(value: String): String {
-        return value
-            .replace("\\", "\\\\")
-            .replace(";", "\\;")
-            .replace(",", "\\,")
-            .replace(":", "\\:")
-            .replace("\"", "\\\"")
-    }
-
-    private fun dp(value: Int): Int {
-        return TypedValue.applyDimension(
-            TypedValue.COMPLEX_UNIT_DIP,
-            value.toFloat(),
-            resources.displayMetrics
-        ).toInt()
-    }
-
     private fun handleShareIntent(incomingIntent: Intent?) {
         if (incomingIntent == null) return
         val action = incomingIntent.action ?: return
@@ -414,8 +303,6 @@ class MainActivity : Activity() {
         private const val PREFS = "lan_share_prefs"
         private const val KEY_PORT = "port"
         private const val KEY_FOLDER_URI = "folder_uri"
-        private const val KEY_HOTSPOT_SSID = "hotspot_ssid"
-        private const val KEY_HOTSPOT_PASS = "hotspot_pass"
         private const val REQ_STORAGE_PERMS = 1200
         private const val REQ_PICK_FOLDER = 1201
         private const val REQ_MANAGE_ALL_FILES = 1202

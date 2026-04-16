@@ -133,37 +133,17 @@
                     android:textColor="@color/white" />
             </LinearLayout>
 
-            <LinearLayout
+            <Button
+                android:id="@+id/btnEnableHotspot"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:orientation="horizontal">
-
-                <Button
-                    android:id="@+id/btnEnableHotspot"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:background="@drawable/bg_teal_button"
-                    android:fontFamily="@font/jetbrains_mono_bold"
-                    android:minHeight="46dp"
-                    android:text="Hotspot settings"
-                    android:textAllCaps="false"
-                    android:textColor="@color/white" />
-
-                <Button
-                    android:id="@+id/btnShowHotspotQr"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="12dp"
-                    android:background="@drawable/bg_secondary_button"
-                    android:fontFamily="@font/jetbrains_mono_bold"
-                    android:minHeight="46dp"
-                    android:text="Hotspot QR"
-                    android:textAllCaps="false"
-                    android:textColor="@color/text_primary" />
-            </LinearLayout>
+                android:background="@drawable/bg_teal_button"
+                android:fontFamily="@font/jetbrains_mono_bold"
+                android:minHeight="46dp"
+                android:text="Hotspot settings"
+                android:textAllCaps="false"
+                android:textColor="@color/white" />
 
             <Button
                 android:id="@+id/btnOpenBrowser"
