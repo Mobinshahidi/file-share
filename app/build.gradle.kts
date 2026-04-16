@@ -3,12 +3,17 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
+val ciKeystorePath = System.getenv("ANDROID_KEYSTORE_PATH")
+val ciKeystorePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
+val ciKeyAlias = System.getenv("ANDROID_KEY_ALIAS")
+val ciKeyPassword = System.getenv("ANDROID_KEY_PASSWORD")
+
 android {
     namespace = "com.lanshare.app"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.lanshare.app"
+        applicationId = "com.swap.app"
         minSdk = 26
         targetSdk = 34
         versionCode = 1
@@ -24,6 +29,28 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            if (!ciKeystorePath.isNullOrBlank() &&
+                !ciKeystorePassword.isNullOrBlank() &&
+                !ciKeyAlias.isNullOrBlank() &&
+                !ciKeyPassword.isNullOrBlank()
+            ) {
+                signingConfig = signingConfigs.getByName("release")
+            }
+        }
+    }
+
+    signingConfigs {
+        if (!ciKeystorePath.isNullOrBlank() &&
+            !ciKeystorePassword.isNullOrBlank() &&
+            !ciKeyAlias.isNullOrBlank() &&
+            !ciKeyPassword.isNullOrBlank()
+        ) {
+            create("release") {
+                storeFile = file(ciKeystorePath)
+                storePassword = ciKeystorePassword
+                keyAlias = ciKeyAlias
+                keyPassword = ciKeyPassword
+            }
         }
     }
 
@@ -38,6 +65,14 @@ android {
 
     buildFeatures {
         viewBinding = true
+    }
+}
+
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        variant.outputs.forEach { output ->
+            output.outputFileName.set("swap-${variant.name}.apk")
+        }
     }
 }
 
