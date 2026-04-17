@@ -49,21 +49,23 @@ jobs:
         run: |
           ./gradlew assembleRelease
           apk=$(ls app/build/outputs/apk/release/*.apk | head -n 1)
-          cp "$apk" app/build/outputs/apk/release/swap-release.apk
+          version=$(./gradlew -q :app:properties | grep "^versionName:" | sed 's/versionName: //')
+          cp "$apk" "app/build/outputs/apk/release/swap-v${version}-release.apk"
 
       - name: Build debug APK fallback
         if: ${{ !(env.ANDROID_KEYSTORE_BASE64 != '' && env.ANDROID_KEYSTORE_PASSWORD != '' && env.ANDROID_KEY_ALIAS != '' && env.ANDROID_KEY_PASSWORD != '') }}
         run: |
           ./gradlew assembleDebug
           apk=$(ls app/build/outputs/apk/debug/*.apk | head -n 1)
-          cp "$apk" app/build/outputs/apk/debug/swap-debug.apk
+          version=$(./gradlew -q :app:properties | grep "^versionName:" | sed 's/versionName: //')
+          cp "$apk" "app/build/outputs/apk/debug/swap-v${version}-debug.apk"
 
       - name: Upload release APK artifact
         if: ${{ always() && env.ANDROID_KEYSTORE_BASE64 != '' && env.ANDROID_KEYSTORE_PASSWORD != '' && env.ANDROID_KEY_ALIAS != '' && env.ANDROID_KEY_PASSWORD != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: swap-release-apk
-          path: app/build/outputs/apk/release/swap-release.apk
+          path: app/build/outputs/apk/release/swap-v*-release.apk
           if-no-files-found: warn
 
       - name: Upload debug APK artifact
@@ -71,5 +73,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: swap-debug-apk
-          path: app/build/outputs/apk/debug/swap-debug.apk
+          path: app/build/outputs/apk/debug/swap-v*-debug.apk
           if-no-files-found: warn
