@@ -68,15 +68,6 @@ android {
     }
 }
 
-androidComponents {
-    onVariants(selector().all()) { variant ->
-        variant.outputs.forEach { output ->
-            val apkOutput = output as? com.android.build.api.variant.ApkVariantOutput
-            apkOutput?.outputFileName?.set("swap-${variant.name}.apk")
-        }
-    }
-}
-
 dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
     implementation("com.google.zxing:core:3.5.3")
